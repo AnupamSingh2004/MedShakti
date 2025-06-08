@@ -217,7 +217,6 @@ SPECTACULAR_SETTINGS = {
     'SERVE_INCLUDE_SCHEMA': False,
 }
 
-# Logging configuration
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -232,28 +231,21 @@ LOGGING = {
         },
     },
     'handlers': {
-        'file': {
-            'level': 'INFO',
-            'class': 'logging.FileHandler',
-            'filename': BASE_DIR / 'logs' / 'django.log',
-            'formatter': 'verbose',
-        },
         'console': {
             'level': 'INFO',
             'class': 'logging.StreamHandler',
-            'formatter': 'simple',
+            'formatter': 'verbose',
         },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
     },
     'loggers': {
         'django': {
-            'handlers': ['file', 'console'],
+            'handlers': ['console'],
             'level': 'INFO',
-            'propagate': True,
-        },
-        'medshakti': {
-            'handlers': ['file', 'console'],
-            'level': 'DEBUG',
-            'propagate': True,
+            'propagate': False,
         },
     },
 }
@@ -275,9 +267,9 @@ EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
 GOOGLE_OAUTH2_CLIENT_ID = config('GOOGLE_OAUTH2_CLIENT_ID', default='')
 GOOGLE_OAUTH2_CLIENT_SECRET = config('GOOGLE_OAUTH2_CLIENT_SECRET', default='')
 
-# File Upload Settings
-FILE_UPLOAD_MAX_MEMORY_SIZE = 5242880  # 5MB
-DATA_UPLOAD_MAX_MEMORY_SIZE = 5242880  # 5MB
+# # File Upload Settings
+# FILE_UPLOAD_MAX_MEMORY_SIZE = 5242880  # 5MB
+# DATA_UPLOAD_MAX_MEMORY_SIZE = 5242880  # 5MB
 
 # Security Settings for Production
 if not DEBUG:

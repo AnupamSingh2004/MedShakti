@@ -1,5 +1,3 @@
-# Base settings template for all Django services
-# Copy this to each service's settings.py and customize as needed
 
 import os
 from pathlib import Path
@@ -219,7 +217,6 @@ SPECTACULAR_SETTINGS = {
     'SERVE_INCLUDE_SCHEMA': False,
 }
 
-# Logging configuration
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -234,28 +231,21 @@ LOGGING = {
         },
     },
     'handlers': {
-        'file': {
-            'level': 'INFO',
-            'class': 'logging.FileHandler',
-            'filename': BASE_DIR / 'logs' / 'django.log',
-            'formatter': 'verbose',
-        },
         'console': {
             'level': 'INFO',
             'class': 'logging.StreamHandler',
-            'formatter': 'simple',
+            'formatter': 'verbose',
         },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
     },
     'loggers': {
         'django': {
-            'handlers': ['file', 'console'],
+            'handlers': ['console'],
             'level': 'INFO',
-            'propagate': True,
-        },
-        'medshakti': {
-            'handlers': ['file', 'console'],
-            'level': 'DEBUG',
-            'propagate': True,
+            'propagate': False,
         },
     },
 }
