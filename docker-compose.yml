@@ -1,0 +1,226 @@
+version: '3.8'
+
+services:
+  # Database Services
+  postgres_auth:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: medshakti_auth
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+    volumes:
+      - postgres_auth_data:/var/lib/postgresql/data
+      - ./infrastructure/postgres/init-auth.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    networks:
+      - medshakti_network
+
+  postgres_medicine:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: medshakti_medicine
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+    volumes:
+      - postgres_medicine_data:/var/lib/postgresql/data
+      - ./infrastructure/postgres/init-medicine.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5433:5432"
+    networks:
+      - medshakti_network
+
+  postgres_store:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: medshakti_store
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+    volumes:
+      - postgres_store_data:/var/lib/postgresql/data
+      - ./infrastructure/postgres/init-store.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5434:5432"
+    networks:
+      - medshakti_network
+
+  postgres_prescription:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: medshakti_prescription
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+    volumes:
+      - postgres_prescription_data:/var/lib/postgresql/data
+      - ./infrastructure/postgres/init-prescription.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5435:5432"
+    networks:
+      - medshakti_network
+
+  postgres_notification:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: medshakti_notification
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+    volumes:
+      - postgres_notification_data:/var/lib/postgresql/data
+      - ./infrastructure/postgres/init-notification.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5436:5432"
+    networks:
+      - medshakti_network
+
+  # Redis Services
+  redis_auth:
+    image: redis:7-alpine
+    command: redis-server /usr/local/etc/redis/redis.conf
+    volumes:
+      - ./infrastructure/redis/redis-auth.conf:/usr/local/etc/redis/redis.conf
+      - redis_auth_data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - medshakti_network
+
+  redis_cache:
+    image: redis:7-alpine
+    command: redis-server /usr/local/etc/redis/redis.conf
+    volumes:
+      - ./infrastructure/redis/redis-cache.conf:/usr/local/etc/redis/redis.conf
+      - redis_cache_data:/data
+    ports:
+      - "6380:6379"
+    networks:
+      - medshakti_network
+
+  # Microservices
+  auth_service:
+    build: ./services/auth_service
+    environment:
+      - DEBUG=1
+      - DATABASE_URL=postgresql://postgres:postgres123@postgres_auth:5432/medshakti_auth
+      - REDIS_URL=redis://redis_auth:6379/0
+    volumes:
+      - ./services/auth_service:/app
+    ports:
+      - "8001:8000"
+    depends_on:
+      - postgres_auth
+      - redis_auth
+    networks:
+      - medshakti_network
+
+  medicine_service:
+    build: ./services/medicine_service
+    environment:
+      - DEBUG=1
+      - DATABASE_URL=postgresql://postgres:postgres123@postgres_medicine:5432/medshakti_medicine
+      - REDIS_URL=redis://redis_cache:6379/1
+    volumes:
+      - ./services/medicine_service:/app
+    ports:
+      - "8002:8000"
+    depends_on:
+      - postgres_medicine
+      - redis_cache
+    networks:
+      - medshakti_network
+
+  store_service:
+    build: ./services/store_service
+    environment:
+      - DEBUG=1
+      - DATABASE_URL=postgresql://postgres:postgres123@postgres_store:5432/medshakti_store
+      - REDIS_URL=redis://redis_cache:6379/2
+    volumes:
+      - ./services/store_service:/app
+    ports:
+      - "8003:8000"
+    depends_on:
+      - postgres_store
+      - redis_cache
+    networks:
+      - medshakti_network
+
+  prescription_service:
+    build: ./services/prescription_service
+    environment:
+      - DEBUG=1
+      - DATABASE_URL=postgresql://postgres:postgres123@postgres_prescription:5432/medshakti_prescription
+      - REDIS_URL=redis://redis_cache:6379/3
+    volumes:
+      - ./services/prescription_service:/app
+    ports:
+      - "8004:8000"
+    depends_on:
+      - postgres_prescription
+      - redis_cache
+    networks:
+      - medshakti_network
+
+  notification_service:
+    build: ./services/notification_service
+    environment:
+      - DEBUG=1
+      - DATABASE_URL=postgresql://postgres:postgres123@postgres_notification:5432/medshakti_notification
+      - REDIS_URL=redis://redis_cache:6379/4
+    volumes:
+      - ./services/notification_service:/app
+    ports:
+      - "8005:8000"
+    depends_on:
+      - postgres_notification
+      - redis_cache
+    networks:
+      - medshakti_network
+
+  api_gateway:
+    build: ./services/api_gateway
+    environment:
+      - DEBUG=1
+      - AUTH_SERVICE_URL=http://auth_service:8000
+      - MEDICINE_SERVICE_URL=http://medicine_service:8000
+      - STORE_SERVICE_URL=http://store_service:8000
+      - PRESCRIPTION_SERVICE_URL=http://prescription_service:8000
+      - NOTIFICATION_SERVICE_URL=http://notification_service:8000
+    volumes:
+      - ./services/api_gateway:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - auth_service
+      - medicine_service
+      - store_service
+      - prescription_service
+      - notification_service
+    networks:
+      - medshakti_network
+
+  # Nginx Load Balancer
+  nginx:
+    image: nginx:alpine
+    volumes:
+      - ./infrastructure/nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./infrastructure/nginx/medshakti.conf:/etc/nginx/conf.d/default.conf
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - api_gateway
+    networks:
+      - medshakti_network
+
+volumes:
+  postgres_auth_data:
+  postgres_medicine_data:
+  postgres_store_data:
+  postgres_prescription_data:
+  postgres_notification_data:
+  redis_auth_data:
+  redis_cache_data:
+
+networks:
+  medshakti_network:
+    driver: bridge

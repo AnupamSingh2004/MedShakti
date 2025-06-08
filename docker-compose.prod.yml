@@ -1,0 +1,142 @@
+version: '3.8'
+
+services:
+  # Production Database with connection pooling
+  postgres_main:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: medshakti_prod
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_prod_data:/var/lib/postgresql/data
+      - ./infrastructure/postgres/init-prod.sql:/docker-entrypoint-initdb.d/init.sql
+    restart: unless-stopped
+    networks:
+      - medshakti_prod_network
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+        reservations:
+          memory: 1G
+
+  redis_prod:
+    image: redis:7-alpine
+    command: redis-server /usr/local/etc/redis/redis.conf
+    volumes:
+      - ./infrastructure/redis/redis-prod.conf:/usr/local/etc/redis/redis.conf
+      - redis_prod_data:/data
+    restart: unless-stopped
+    networks:
+      - medshakti_prod_network
+
+  # Production Services
+  auth_service:
+    build: 
+      context: ./services/auth_service
+      dockerfile: Dockerfile.prod
+    environment:
+      - DEBUG=0
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres_main:5432/medshakti_prod
+      - REDIS_URL=redis://redis_prod:6379/0
+      - SECRET_KEY=${SECRET_KEY}
+    restart: unless-stopped
+    networks:
+      - medshakti_prod_network
+    deploy:
+      replicas: 2
+
+  medicine_service:
+    build: 
+      context: ./services/medicine_service
+      dockerfile: Dockerfile.prod
+    environment:
+      - DEBUG=0
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres_main:5432/medshakti_prod
+      - REDIS_URL=redis://redis_prod:6379/1
+      - SECRET_KEY=${SECRET_KEY}
+    restart: unless-stopped
+    networks:
+      - medshakti_prod_network
+    deploy:
+      replicas: 2
+
+  store_service:
+    build: 
+      context: ./services/store_service
+      dockerfile: Dockerfile.prod
+    environment:
+      - DEBUG=0
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres_main:5432/medshakti_prod
+      - REDIS_URL=redis://redis_prod:6379/2
+      - SECRET_KEY=${SECRET_KEY}
+    restart: unless-stopped
+    networks:
+      - medshakti_prod_network
+    deploy:
+      replicas: 2
+
+  prescription_service:
+    build: 
+      context: ./services/prescription_service
+      dockerfile: Dockerfile.prod
+    environment:
+      - DEBUG=0
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres_main:5432/medshakti_prod
+      - REDIS_URL=redis://redis_prod:6379/3
+      - SECRET_KEY=${SECRET_KEY}
+    restart: unless-stopped
+    networks:
+      - medshakti_prod_network
+    deploy:
+      replicas: 2
+
+  notification_service:
+    build: 
+      context: ./services/notification_service
+      dockerfile: Dockerfile.prod
+    environment:
+      - DEBUG=0
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres_main:5432/medshakti_prod
+      - REDIS_URL=redis://redis_prod:6379/4
+      - SECRET_KEY=${SECRET_KEY}
+    restart: unless-stopped
+    networks:
+      - medshakti_prod_network
+    deploy:
+      replicas: 2
+
+  api_gateway:
+    build: 
+      context: ./services/api_gateway
+      dockerfile: Dockerfile.prod
+    environment:
+      - DEBUG=0
+      - SECRET_KEY=${SECRET_KEY}
+    restart: unless-stopped
+    networks:
+      - medshakti_prod_network
+    deploy:
+      replicas: 3
+
+  nginx:
+    image: nginx:alpine
+    volumes:
+      - ./infrastructure/nginx/nginx-prod.conf:/etc/nginx/nginx.conf
+      - ./infrastructure/nginx/medshakti-prod.conf:/etc/nginx/conf.d/default.conf
+      - ./ssl:/etc/nginx/ssl
+    ports:
+      - "80:80"
+      - "443:443"
+    restart: unless-stopped
+    networks:
+      - medshakti_prod_network
+
+volumes:
+  postgres_prod_data:
+  redis_prod_data:
+
+networks:
+  medshakti_prod_network:
+    driver: bridge
