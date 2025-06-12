@@ -55,7 +55,8 @@ MedShakti is a comprehensive healthcare platform that helps users find affordabl
 ![Google Cloud](https://img.shields.io/badge/GoogleCloud-%234285F4.svg?style=flat-square&logo=google-cloud&logoColor=white)
 
 </div>
-## Features
+
+## 📦 Features
 
 - 🔍 **AI-Powered Prescription Scanner**  
   Upload a prescription image to automatically extract medicine names using OCR and NLP.
