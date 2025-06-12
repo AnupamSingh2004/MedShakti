@@ -55,7 +55,38 @@ MedShakti is a comprehensive healthcare platform that helps users find affordabl
 ![Google Cloud](https://img.shields.io/badge/GoogleCloud-%234285F4.svg?style=flat-square&logo=google-cloud&logoColor=white)
 
 </div>
+## 📦 Features
 
+- 🔍 **AI-Powered Prescription Scanner**  
+  Upload a prescription image to automatically extract medicine names using OCR and NLP.
+
+- 💊 **Generic Medicine Suggestions**  
+  Find affordable and equivalent generic alternatives to branded medicines.
+
+- 🏥 **Jan Aushadhi Store Locator**  
+  Locate nearby government-approved generic medicine stores using Google Maps.
+
+- 📦 **Microservices Architecture**  
+  Fully modular backend with dedicated services for auth, medicine, store, OCR, notifications, and gateway.
+
+- 🧠 **Drug Interaction Checker** *(Planned)*  
+  Warn users about potential harmful drug interactions based on prescription analysis.
+
+- 📅 **Medicine Intake Reminders** *(Planned)*  
+  Users receive scheduled notifications for medicine intake via push alerts.
+
+- 🔐 **Secure User Authentication**  
+  Built with Django and JWT for secure login, token management, and session handling.
+
+- 🗃️ **Scalable Database System**  
+  Separate PostgreSQL databases and Redis instances for cache and performance optimization.
+
+- 📈 **Cloud-Ready and Containerized**  
+  Fully containerized using Docker with cloud deployment support on AWS/GCP.
+
+- 🌐 **API Gateway & Load Balancing**  
+  Centralized routing via API Gateway with Nginx-based load distribution.
+  
 ### Microservices Architecture
 - **Auth Service** - User authentication and authorization
 - **Medicine Service** - Medicine database and alternatives
